@@ -283,6 +283,16 @@ bool StudentWorld::isIceAt(int x, int y) const {
     return m_iceField[x][y] != nullptr;
 }
 
+Iceman* StudentWorld::getIceman() const {
+    return m_iceman;
+}
+
+void StudentWorld::dropGold()
+{
+    m_actors.push_back(new GoldNugget(getIcemanX() + 3, getIcemanY(), false, this));
+}
+
+
 //========================================CHANGED=============================================
 
 bool StudentWorld::isBoulderAt(int x, int y, double radius) const {

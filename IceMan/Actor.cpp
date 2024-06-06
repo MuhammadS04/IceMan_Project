@@ -60,7 +60,7 @@ void Iceman::doSomething() {
         switch (ch) {
             // a. Handle escape key
         case KEY_PRESS_ESCAPE:
-            getWorld()->playSound(KEY_PRESS_ESCAPE);
+            //getWorld()->playSound(KEY_PRESS_ESCAPE);
             setDead();
             return;
 
@@ -72,16 +72,16 @@ void Iceman::doSomething() {
                 Direction dir = getDirection();
                 switch (dir) {
                 case left:
-                    x -= 4;
+                    x -= 1;
                     break;
                 case right:
-                    x += 4;
+                    x += 1;
                     break;
                 case up:
-                    y += 4;
+                    y += 1;
                     break;
                 case down:
-                    y -= 4;
+                    y -= 1;
                     break;
                 }
                 if (!getWorld()->isBlocked(x, y) && !getWorld()->isIceAt(x, y) && !getWorld()->isBoulderAt(x, y, 3.0)) {
@@ -96,7 +96,7 @@ void Iceman::doSomething() {
             if (getDirection() != left) {
                 setDirection(left);
             }
-            else if (getX() > 0 && !getWorld()->isBlocked(getX() - 1, getY())) {
+            else if (getX() > 0 && !getWorld()->isBlocked(getX() - 1, getY()) && !getWorld()->isBoulderAt(getX() - 1, getY(), 3.0)) {
                 moveTo(getX() - 1, getY());
             }
             break;
@@ -104,7 +104,7 @@ void Iceman::doSomething() {
             if (getDirection() != right) {
                 setDirection(right);
             }
-            else if (getX() < 60 && !getWorld()->isBlocked(getX() + 1, getY())) {
+            else if (getX() < 60 && !getWorld()->isBlocked(getX() + 1, getY()) && !getWorld()->isBoulderAt(getX() + 1, getY(), 3.0)) {
                 moveTo(getX() + 1, getY());
             }
             break;
@@ -112,7 +112,7 @@ void Iceman::doSomething() {
             if (getDirection() != up) {
                 setDirection(up);
             }
-            else if (getY() < 60 && !getWorld()->isBlocked(getX(), getY() + 1)) {
+            else if (getY() < 60 && !getWorld()->isBlocked(getX(), getY() + 1) && !getWorld()->isBoulderAt(getX(), getY() + 1, 3.0)) {
                 moveTo(getX(), getY() + 1);
             }
             break;
@@ -120,7 +120,7 @@ void Iceman::doSomething() {
             if (getDirection() != down) {
                 setDirection(down);
             }
-            else if (getY() > 0 && !getWorld()->isBlocked(getX(), getY() - 1)) {
+            else if (getY() > 0 && !getWorld()->isBlocked(getX(), getY() - 1) && !getWorld()->isBoulderAt(getX(), getY() - 1, 3.0)) {
                 moveTo(getX(), getY() - 1);
             }
             break;
@@ -136,11 +136,7 @@ void Iceman::doSomething() {
 
             // f. Handle dropping gold nugget
         case KEY_PRESS_TAB:
-            if (m_gold > 0) {
-                m_gold--;
-                getWorld()->addActor(new GoldNugget(getX(), getY(), true, getWorld()));
-            }
-            break;
+            dropGold();
 
         default:
             break;
@@ -153,6 +149,16 @@ int Iceman::getSonarCharge() { return m_sonar; }
 int Iceman::getGoldNugget() { return m_gold; }
 int Iceman::getOil() { return m_oilLeft; }
 int Iceman::getHP() { return m_hitPoints;  }
+void Iceman::setGoldNugget(int val) { m_gold = val; }
+
+void Iceman::dropGold()
+{
+    if (getWorld()->getIceman()->getGoldNugget() > 0)
+    {
+        getWorld()->dropGold();
+        getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() - 1);
+    }
+}
 
 // Boulder class implementation
 Boulder::Boulder(int startX, int startY, StudentWorld* world)
@@ -252,7 +258,7 @@ void Squirt::doSomething() {
 // GoldNugget class implementation
 GoldNugget::GoldNugget(int startX, int startY, bool temporary, StudentWorld* world)
     : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(100), m_visible(false) {
-    setVisible(false); // Initially invisible
+    setVisible(temporary); // Initially invisible
 }
 
 GoldNugget::~GoldNugget() {}
@@ -262,35 +268,40 @@ void GoldNugget::setVisible(bool visible) {
     Actor::setVisible(visible); // Call the base class function to set visibility
 }
 
-
 void GoldNugget::doSomething() {
     if (!isAlive()) return;
 
-    if (m_temporary) {
-        if (m_ticksLeft > 0) {
-            m_ticksLeft--;
+    if (m_isPickupable) {
+        if (!isVisible() && getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 4) {
+            setVisible(true);
+            return;
         }
-        else {
+
+        if (isVisible() && getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 3) {
             setDead();
+            getWorld()->playSound(SOUND_GOT_GOODIE);
+            getWorld()->increaseScore(10); // Adjust score as needed
+            getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() + 1);
+            return;
         }
     }
+    else {
+        if (m_ticksLeft == 0) {
+            setDead();
+            return;
+        }
 
-    // Check if the Iceman is within 5 radius distance
-    int icemanX = getWorld()->getIcemanX();
-    int icemanY = getWorld()->getIcemanY();
-    int distance = getWorld()->calculateDistance(getX(), getY(), icemanX, icemanY);
+        //if (getWorld()->anyProtesterPickUpGold(this)) {
+        //    Protester* protester = getWorld()->anyProtesterPickUpGold(this);
+        //    setDead();
+        //    protester->getBribed(); // Assuming Protester has a method to handle getting bribed
+        //    return;
+        //}
 
-    if (!m_visible && distance <= 5) {
-        setVisible(true); // Make the gold nugget visible
-    }
-
-    // Logic to handle nugget being picked up
-    if (!m_temporary && m_visible && icemanX == getX() && icemanY == getY()) {
-        setDead(); // Gold picked up, set it as dead
-        getWorld()->increaseScore(10); // Increase score for picking up gold
-        getWorld()->playSound(SOUND_GOT_GOODIE); // Play sound effect
+        --m_ticksLeft;
     }
 }
+
 //========================================================================================================
 
 

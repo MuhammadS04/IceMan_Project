@@ -36,6 +36,8 @@ public:
     int getGoldNugget();
     int getOil();
     int getHP();
+    void setGoldNugget(int val);
+    void dropGold();
 
 
 private:
@@ -79,6 +81,7 @@ private:
     bool m_temporary;
     int m_ticksLeft;
     bool m_visible;
+    bool m_isPickupable;
 };
 //=====================================================================================
 

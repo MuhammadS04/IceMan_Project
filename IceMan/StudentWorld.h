@@ -27,6 +27,8 @@ public:
     int getIcemanY() const;
     bool removeIce(int x, int y);
     bool isIceAt(int x, int y) const;
+    Iceman* getIceman() const;
+    void dropGold();
 
 
     //=========================================CHANGED============================================
