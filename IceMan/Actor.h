@@ -72,7 +72,7 @@ private:
 //====================================CHANGED=========================================
 class GoldNugget : public Actor {
 public:
-    GoldNugget(int startX, int startY, bool temporary, StudentWorld* world);
+    GoldNugget(int startX, int startY, bool temporary, bool isPickupableByIceman, StudentWorld* world);
     virtual ~GoldNugget();
     virtual void doSomething() override;
     void setVisible(bool visible);
@@ -81,7 +81,7 @@ private:
     bool m_temporary;
     int m_ticksLeft;
     bool m_visible;
-    bool m_isPickupable;
+    bool m_isPickupableByIceman;
 };
 //=====================================================================================
 
@@ -98,6 +98,7 @@ public:
     bool canMoveInDirection(Direction dir) const;
     void pickNewDirection();
     void moveToExit();
+    void getBribed();
 
 protected:
     int m_hitPoints;

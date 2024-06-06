@@ -157,6 +157,7 @@ void Iceman::dropGold()
     {
         getWorld()->dropGold();
         getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() - 1);
+        
     }
 }
 
@@ -256,9 +257,9 @@ void Squirt::doSomething() {
 
 //============================================CHANGED=====================================================
 // GoldNugget class implementation
-GoldNugget::GoldNugget(int startX, int startY, bool temporary, StudentWorld* world)
-    : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(100), m_visible(false) {
-    setVisible(temporary); // Initially invisible
+GoldNugget::GoldNugget(int startX, int startY, bool temporary, bool isPickupableByIceman, StudentWorld* world)
+    : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(temporary ? 100 : -1), m_isPickupableByIceman(isPickupableByIceman) {
+    setVisible(!isPickupableByIceman); // Buried nuggets start invisible, dropped nuggets start visible
 }
 
 GoldNugget::~GoldNugget() {}
@@ -271,36 +272,50 @@ void GoldNugget::setVisible(bool visible) {
 void GoldNugget::doSomething() {
     if (!isAlive()) return;
 
-    if (m_isPickupable) {
-        if (!isVisible() && getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 4) {
-            setVisible(true);
-            return;
-        }
+    int icemanX = getWorld()->getIcemanX();
+    int icemanY = getWorld()->getIcemanY();
+    double distanceToIceman = getWorld()->calculateDistance(getX(), getY(), icemanX, icemanY);
 
-        if (isVisible() && getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 3) {
+    // If the nugget is invisible and Iceman is within 4.0 units, make it visible
+    if (!isVisible() && distanceToIceman <= 4.0) {
+        setVisible(true);
+        return;
+    }
+
+    // If the nugget is pickup-able by Iceman and within 3.0 units, handle pickup by Iceman
+    if (m_isPickupableByIceman && distanceToIceman <= 3.0) {
+        setDead();
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->increaseScore(10);
+        getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() + 1);
+        return;
+    }
+
+    // If the nugget is pickup-able by Protesters and within 3.0 units, handle pickup by Protesters
+    if (!m_isPickupableByIceman) {
+        Protester* protester = getWorld()->anyProtesterPickUpGold(this);
+        if (protester && getWorld()->calculateDistance(getX(), getY(), protester->getX(), protester->getY()) <= 3.0) {
             setDead();
-            getWorld()->playSound(SOUND_GOT_GOODIE);
-            getWorld()->increaseScore(10); // Adjust score as needed
-            getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() + 1);
+            getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);
+            protester->getBribed(); // Assume Protester has a getBribed method
+            getWorld()->increaseScore(25);
             return;
         }
     }
-    else {
+
+    // If the nugget is temporary and its lifetime has elapsed, set it to dead
+    if (m_temporary && m_ticksLeft > 0) {
+        m_ticksLeft--;
         if (m_ticksLeft == 0) {
             setDead();
-            return;
         }
-
-        //if (getWorld()->anyProtesterPickUpGold(this)) {
-        //    Protester* protester = getWorld()->anyProtesterPickUpGold(this);
-        //    setDead();
-        //    protester->getBribed(); // Assuming Protester has a method to handle getting bribed
-        //    return;
-        //}
-
-        --m_ticksLeft;
     }
 }
+
+
+
+
+
 
 //========================================================================================================
 
@@ -405,6 +420,15 @@ void Protester::shoutIfCloseToIceman() {
         m_shoutCooldown = 15;
     }
 }
+
+void Protester::getBribed() {
+    // Logic for handling the bribery
+    setDead();
+    m_leaveOilField = true;
+    getWorld()->increaseScore(25);  // Increase score for bribing
+    getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);  // Play sound effect
+}
+
 
 bool Protester::canMoveInDirection(Direction dir) const {
     int x = getX(), y = getY();

@@ -156,7 +156,7 @@ void StudentWorld::addActors() {
     for (int i = 0; i < G; i++) {
         int x = rand() % 61;
         int y = rand() % 57;
-        m_actors.push_back(new GoldNugget(x, y, false, this));
+        m_actors.push_back(new GoldNugget(x, y, false, true, this));
     }
 
     // Add Regular Protesters
@@ -283,14 +283,31 @@ bool StudentWorld::isIceAt(int x, int y) const {
     return m_iceField[x][y] != nullptr;
 }
 
+
+
 Iceman* StudentWorld::getIceman() const {
     return m_iceman;
 }
 
 void StudentWorld::dropGold()
 {
-    m_actors.push_back(new GoldNugget(getIcemanX() + 3, getIcemanY(), false, this));
+    GoldNugget* newGold = new GoldNugget(getIcemanX(), getIcemanY(), false, false, this);
+    //newGold->m_temporary = false;
+    m_actors.push_back(newGold);
+    
 }
+
+Protester* StudentWorld::anyProtesterPickUpGold(GoldNugget* gold) {
+    for (auto actor : m_actors) {
+        if (Protester* protester = dynamic_cast<Protester*>(actor)) {
+            if (calculateDistance(protester->getX(), protester->getY(), gold->getX(), gold->getY()) <= 3) {
+                return protester;
+            }
+        }
+    }
+    return nullptr;
+}
+
 
 
 //========================================CHANGED=============================================

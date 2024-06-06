@@ -29,6 +29,7 @@ public:
     bool isIceAt(int x, int y) const;
     Iceman* getIceman() const;
     void dropGold();
+    Protester* anyProtesterPickUpGold(GoldNugget* gold);
 
 
     //=========================================CHANGED============================================
