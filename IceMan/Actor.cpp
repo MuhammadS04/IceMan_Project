@@ -32,34 +32,42 @@ void Ice::doSomething() {
     // Ice does nothing
 }
 
-// Iceman class implementation
 Iceman::Iceman(StudentWorld* world)
     : Actor(IID_PLAYER, 30, 60, right, 1.0, 0, world), m_hitPoints(10), m_water(5), m_gold(0), m_sonar(1) {}
 
 Iceman::~Iceman() {}
 
 void Iceman::doSomething() {
+    // 1. Check if the Iceman is alive
     if (!isAlive()) return;
 
+    // 2. Remove ice in the 4x4 area occupied by the Iceman
+    bool iceRemoved = false;
+    for (int x = getX(); x < getX() + 4; x++) {
+        for (int y = getY(); y < getY() + 4; y++) {
+            if (getWorld()->removeIce(x, y)) {
+                iceRemoved = true;
+            }
+        }
+    }
+    if (iceRemoved) {
+        getWorld()->playSound(SOUND_DIG);
+    }
+
+    // 3. Check for key presses
     int ch;
     if (getWorld()->getKey(ch)) {
         switch (ch) {
-        case KEY_PRESS_LEFT:
-            if (getX() > 0 && !getWorld()->isBlocked(getX() - 1, getY())) moveTo(getX() - 1, getY());
-            break;
-        case KEY_PRESS_RIGHT:
-            if (getX() < 60 && !getWorld()->isBlocked(getX() + 1, getY())) moveTo(getX() + 1, getY());
-            break;
-        case KEY_PRESS_UP:
-            if (getY() < 60 && !getWorld()->isBlocked(getX(), getY() + 1)) moveTo(getX(), getY() + 1);
-            break;
-        case KEY_PRESS_DOWN:
-            if (getY() > 0 && !getWorld()->isBlocked(getX(), getY() - 1)) moveTo(getX(), getY() - 1);
-            break;
+            // a. Handle escape key
+        case KEY_PRESS_ESCAPE:
+            setDead();
+            getWorld()->playSound(KEY_PRESS_ESCAPE);
+            return;
+
+            // b. Handle space bar to fire squirt
         case KEY_PRESS_SPACE:
             if (m_water > 0) {
                 m_water--;
-                // Add squirt logic here
                 int x = getX(), y = getY();
                 Direction dir = getDirection();
                 switch (dir) {
@@ -76,27 +84,64 @@ void Iceman::doSomething() {
                     y -= 4;
                     break;
                 }
-                getWorld()->addActor(new Squirt(x, y, dir, getWorld()));
+                if (!getWorld()->isBlocked(x, y) && !getWorld()->isIceAt(x, y) && !getWorld()->isBoulderAt(x, y, 3.0)) {
+                    getWorld()->addActor(new Squirt(x, y, dir, getWorld()));
+                }
                 getWorld()->playSound(SOUND_PLAYER_SQUIRT);
             }
             break;
-        case KEY_PRESS_ESCAPE:
-            setDead();
+
+            // c. Handle turning directions
+        case KEY_PRESS_LEFT:
+            if (getDirection() != left) {
+                setDirection(left);
+            }
+            else if (getX() > 0 && !getWorld()->isBlocked(getX() - 1, getY())) {
+                moveTo(getX() - 1, getY());
+            }
             break;
-        case 'Z':
+        case KEY_PRESS_RIGHT:
+            if (getDirection() != right) {
+                setDirection(right);
+            }
+            else if (getX() < 60 && !getWorld()->isBlocked(getX() + 1, getY())) {
+                moveTo(getX() + 1, getY());
+            }
+            break;
+        case KEY_PRESS_UP:
+            if (getDirection() != up) {
+                setDirection(up);
+            }
+            else if (getY() < 60 && !getWorld()->isBlocked(getX(), getY() + 1)) {
+                moveTo(getX(), getY() + 1);
+            }
+            break;
+        case KEY_PRESS_DOWN:
+            if (getDirection() != down) {
+                setDirection(down);
+            }
+            else if (getY() > 0 && !getWorld()->isBlocked(getX(), getY() - 1)) {
+                moveTo(getX(), getY() - 1);
+            }
+            break;
+
+            // e. Handle sonar charge
         case 'z':
+        case 'Z':
             if (m_sonar > 0) {
                 m_sonar--;
-                // Reveal hidden objects within a radius of 12
                 getWorld()->revealObjects(getX(), getY(), 12);
             }
             break;
+
+            // f. Handle dropping gold nugget
         case KEY_PRESS_TAB:
             if (m_gold > 0) {
                 m_gold--;
                 getWorld()->addActor(new GoldNugget(getX(), getY(), true, getWorld()));
             }
             break;
+
         default:
             break;
         }
@@ -424,8 +469,3 @@ void WaterPool::doSomething() {
     }
 }
 
-
-//#include "Actor.h"
-//#include "StudentWorld.h"
-//
-//// Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp

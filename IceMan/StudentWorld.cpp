@@ -20,11 +20,11 @@ StudentWorld::~StudentWorld() {
 int StudentWorld::init() {
     m_iceman = new Iceman(this);
 
-    // Initialize Ice objects
+    // Initialize Ice objects and add to the ice field array
     for (int x = 0; x < 64; x++) {
         for (int y = 0; y < 60; y++) {
             if (x < 30 || x > 33 || y < 4) {
-                m_actors.push_back(new Ice(x, y, this));
+                m_iceField[x][y] = new Ice(x, y, this);
             }
         }
     }
@@ -49,7 +49,8 @@ int StudentWorld::move() {
 
     if (!m_iceman->isAlive()) return GWSTATUS_PLAYER_DIED;
 
-    return GWSTATUS_CONTINUE_GAME;
+    //return GWSTATUS_CONTINUE_GAME;
+    return GWSTATUS_FINISHED_LEVEL;
 }
 
 void StudentWorld::cleanUp() {
@@ -60,11 +61,15 @@ void StudentWorld::cleanUp() {
         delete actor;
     }
     m_actors.clear();
+
+    //// Clean up the ice field
+    //for (int x = 0; x < 64; x++) {
+    //    for (int y = 0; y < 64; y++) {
+    //        delete m_iceField[x][y];
+    //        m_iceField[x][y] = nullptr;
+    //    }
+    //}
 }
-//
-//bool StudentWorld::getKey(int& value) {
-//    return GameController::getInstance().getKey(value);
-//}
 
 void StudentWorld::updateDisplayText() {
     // Update game status line
@@ -159,10 +164,8 @@ bool StudentWorld::isBlocked(int x, int y) const {
 }
 
 bool StudentWorld::isIceBelow(int x, int y) const {
-    for (const auto& actor : m_actors) {
-        if (actor->getX() == x && actor->getY() == y - 1 && dynamic_cast<Ice*>(actor)) {
-            return true;
-        }
+    if (y > 0 && m_iceField[x][y - 1] != nullptr) {
+        return true;
     }
     return false;
 }
@@ -199,19 +202,35 @@ int StudentWorld::getIcemanY() const {
     return m_iceman->getY();
 }
 
+bool StudentWorld::removeIce(int x, int y) {
+    if (x < 0 || x >= 64 || y < 0 || y >= 60) {
+        return false;
+    }
+    if (m_iceField[x][y] != nullptr) {
+        delete m_iceField[x][y];
+        m_iceField[x][y] = nullptr;
+        return true;
+    }
+    return false;
+}
 
-//#include "StudentWorld.h"
-//#include <string>
-//using namespace std;
-//
-//GameWorld* createStudentWorld(string assetDir)
-//{
-//	return new StudentWorld(assetDir);
-//}
-//
-//// Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp
-//
-//int StudentWorld::init()
-//{
-//	iceman = new Iceman(this, 30, 60);
-//}
+bool StudentWorld::isIceAt(int x, int y) const {
+    if (x < 0 || x >= 64 || y < 0 || y >= 60) {
+        return false;
+    }
+    return m_iceField[x][y] != nullptr;
+}
+
+bool StudentWorld::isBoulderAt(int x, int y, double radius) const {
+    for (const auto& actor : m_actors) {
+        if (Boulder* boulder = dynamic_cast<Boulder*>(actor)) {
+            int boulderX = boulder->getX();
+            int boulderY = boulder->getY();
+            double distance = std::sqrt(std::pow(boulderX - x, 2) + std::pow(boulderY - y, 2));
+            if (distance <= radius) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
