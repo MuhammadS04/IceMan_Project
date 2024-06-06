@@ -12,12 +12,22 @@ GameWorld* createStudentWorld(string assetDir)
     return new StudentWorld(assetDir);
 }
 
+StudentWorld::StudentWorld(std::string assetDir)
+    : GameWorld(assetDir), m_iceman(nullptr) {
+    // Initialize the ice field
+    for (int x = 0; x < 64; x++) {
+        for (int y = 0; y < 64; y++) {
+            m_iceField[x][y] = nullptr;
+        }
+    }
+}
 
 StudentWorld::~StudentWorld() {
     cleanUp();
 }
 
-int StudentWorld::init() {
+int StudentWorld::init()
+{
     m_iceman = new Iceman(this);
 
     // Initialize Ice objects and add to the ice field array
@@ -49,11 +59,11 @@ int StudentWorld::move() {
 
     if (!m_iceman->isAlive()) return GWSTATUS_PLAYER_DIED;
 
-    //return GWSTATUS_CONTINUE_GAME;
-    return GWSTATUS_FINISHED_LEVEL;
+    return GWSTATUS_CONTINUE_GAME;
 }
 
-void StudentWorld::cleanUp() {
+void StudentWorld::cleanUp() 
+{
     delete m_iceman;
     m_iceman = nullptr;
 
@@ -62,14 +72,15 @@ void StudentWorld::cleanUp() {
     }
     m_actors.clear();
 
-    //// Clean up the ice field
-    //for (int x = 0; x < 64; x++) {
-    //    for (int y = 0; y < 64; y++) {
-    //        delete m_iceField[x][y];
-    //        m_iceField[x][y] = nullptr;
-    //    }
-    //}
+    // Clean up the ice field
+    for (int x = 0; x < 64; x++) {
+        for (int y = 0; y < 64; y++) {
+            delete m_iceField[x][y];
+            m_iceField[x][y] = nullptr;
+        }
+    }
 }
+
 
 void StudentWorld::updateDisplayText() {
     // Update game status line
@@ -202,7 +213,8 @@ int StudentWorld::getIcemanY() const {
     return m_iceman->getY();
 }
 
-bool StudentWorld::removeIce(int x, int y) {
+bool StudentWorld::removeIce(int x, int y)
+{
     if (x < 0 || x >= 64 || y < 0 || y >= 60) {
         return false;
     }
