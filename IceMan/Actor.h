@@ -31,12 +31,19 @@ public:
     Iceman(StudentWorld* world);
     virtual ~Iceman();
     virtual void doSomething();
+    int getWater();
+    int getSonarCharge();
+    int getGoldNugget();
+    int getOil();
+    int getHP();
+
 
 private:
     int m_hitPoints;
     int m_water;
     int m_gold;
     int m_sonar;
+    int m_oilLeft;
 };
 
 class Boulder : public Actor {
@@ -60,16 +67,20 @@ private:
     int m_distanceTraveled;
 };
 
+//====================================CHANGED=========================================
 class GoldNugget : public Actor {
 public:
     GoldNugget(int startX, int startY, bool temporary, StudentWorld* world);
     virtual ~GoldNugget();
-    virtual void doSomething();
+    virtual void doSomething() override;
+    void setVisible(bool visible);
 
 private:
     bool m_temporary;
     int m_ticksLeft;
+    bool m_visible;
 };
+//=====================================================================================
 
 class Protester : public Actor {
 public:
@@ -124,8 +135,19 @@ private:
     int m_ticksLeft;
 };
 
+//========================================CHANGED=============================================
+
+class Barrel : public Actor {
+public:
+    Barrel(int startX, int startY, StudentWorld* world);
+    virtual ~Barrel();
+    virtual void doSomething() override;
+
+private:
+    // Add any necessary private members
+};
+
+//============================================================================================
+
+
 #endif // ACTOR_H
-
-
-
-

@@ -62,7 +62,7 @@ int StudentWorld::move() {
     return GWSTATUS_CONTINUE_GAME;
 }
 
-void StudentWorld::cleanUp() 
+void StudentWorld::cleanUp()
 {
     delete m_iceman;
     m_iceman = nullptr;
@@ -80,11 +80,53 @@ void StudentWorld::cleanUp()
         }
     }
 }
+#include <iomanip>
+#include <sstream>
 
+void StudentWorld::updateDisplayText()
+{
+    int score = getScore();
+    int level = getLevel();
+    int lives = getLives();
+    int health = m_iceman->getHP();
+    int squirts = m_iceman->getWater();
+    int gold = m_iceman->getGoldNugget();
+    int sonar = m_iceman->getSonarCharge();
+    int barrels = m_iceman->getOil();
 
-void StudentWorld::updateDisplayText() {
-    // Update game status line
+    stringstream s;
+
+    s.fill('0');
+    s << "Scr: ";
+    s << setw(6) << score;
+
+    s.fill(' ');
+    s << " Lvl: ";
+    s << setw(2) << level;
+
+    s << " Lives: ";
+    s << setw(1) << lives;
+
+    s << "  Hlth: ";
+    s << setw(3) << health * 10;
+    s << '%';
+
+    s << "  Wtr: ";
+    s << setw(2) << squirts;
+
+    s << "  Gld: ";
+    s << setw(2) << gold;
+
+    s << "  Sonar: ";
+    s << setw(2) << sonar;
+
+    s << "  Oil Left: ";
+    s << setw(2) << barrels;
+
+    setGameStatText(s.str());
+
 }
+
 
 void StudentWorld::removeDeadGameObjects() {
     m_actors.erase(std::remove_if(m_actors.begin(), m_actors.end(), [](Actor* actor) {
@@ -142,6 +184,14 @@ void StudentWorld::addActors() {
         int x = rand() % 60;
         int y = rand() % 60;
         m_actors.push_back(new WaterPool(x, y, this));
+    }
+
+    // Add Barrels
+    int H = std::min((int)getLevel() / 2 + 2, 9);
+    for (int i = 0; i < B; i++) {
+        int x = rand() % 60;
+        int y = rand() % 56;
+        m_actors.push_back(new Barrel(x, y, this));
     }
 
     // Add other actors similarly...
@@ -233,6 +283,8 @@ bool StudentWorld::isIceAt(int x, int y) const {
     return m_iceField[x][y] != nullptr;
 }
 
+//========================================CHANGED=============================================
+
 bool StudentWorld::isBoulderAt(int x, int y, double radius) const {
     for (const auto& actor : m_actors) {
         if (Boulder* boulder = dynamic_cast<Boulder*>(actor)) {
@@ -245,4 +297,21 @@ bool StudentWorld::isBoulderAt(int x, int y, double radius) const {
         }
     }
     return false;
+}
+
+bool StudentWorld::isNearIceman(int x, int y, double radius) const {
+    // Calculate the distance between (x, y) and the Iceman's position
+    int icemanX = m_iceman->getX();
+    int icemanY = m_iceman->getY();
+    double distance = sqrt(pow(icemanX - x, 2) + pow(icemanY - y, 2));
+
+    // Check if the distance is less than or equal to the specified radius
+    return distance <= radius;
+}
+
+//============================================================================================
+
+
+double StudentWorld::calculateDistance(int x1, int y1, int x2, int y2) {
+    return sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 }

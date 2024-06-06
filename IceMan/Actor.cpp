@@ -60,8 +60,8 @@ void Iceman::doSomething() {
         switch (ch) {
             // a. Handle escape key
         case KEY_PRESS_ESCAPE:
-            setDead();
             getWorld()->playSound(KEY_PRESS_ESCAPE);
+            setDead();
             return;
 
             // b. Handle space bar to fire squirt
@@ -147,6 +147,12 @@ void Iceman::doSomething() {
         }
     }
 }
+
+int Iceman::getWater() { return m_water; }
+int Iceman::getSonarCharge() { return m_sonar; }
+int Iceman::getGoldNugget() { return m_gold; }
+int Iceman::getOil() { return m_oilLeft; }
+int Iceman::getHP() { return m_hitPoints;  }
 
 // Boulder class implementation
 Boulder::Boulder(int startX, int startY, StudentWorld* world)
@@ -241,11 +247,21 @@ void Squirt::doSomething() {
     }
 }
 
+
+//============================================CHANGED=====================================================
 // GoldNugget class implementation
 GoldNugget::GoldNugget(int startX, int startY, bool temporary, StudentWorld* world)
-    : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(100) {}
+    : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(100), m_visible(false) {
+    setVisible(false); // Initially invisible
+}
 
 GoldNugget::~GoldNugget() {}
+
+void GoldNugget::setVisible(bool visible) {
+    m_visible = visible;
+    Actor::setVisible(visible); // Call the base class function to set visibility
+}
+
 
 void GoldNugget::doSomething() {
     if (!isAlive()) return;
@@ -258,8 +274,26 @@ void GoldNugget::doSomething() {
             setDead();
         }
     }
+
+    // Check if the Iceman is within 5 radius distance
+    int icemanX = getWorld()->getIcemanX();
+    int icemanY = getWorld()->getIcemanY();
+    int distance = getWorld()->calculateDistance(getX(), getY(), icemanX, icemanY);
+
+    if (!m_visible && distance <= 5) {
+        setVisible(true); // Make the gold nugget visible
+    }
+
     // Logic to handle nugget being picked up
+    if (!m_temporary && m_visible && icemanX == getX() && icemanY == getY()) {
+        setDead(); // Gold picked up, set it as dead
+        getWorld()->increaseScore(10); // Increase score for picking up gold
+        getWorld()->playSound(SOUND_GOT_GOODIE); // Play sound effect
+    }
 }
+//========================================================================================================
+
+
 
 // Protester class implementation
 Protester::Protester(int imageID, int startX, int startY, StudentWorld* world, int hitPoints)
@@ -469,3 +503,36 @@ void WaterPool::doSomething() {
     }
 }
 
+
+//=====================================================================================
+
+
+// Barrel class implementation
+Barrel::Barrel(int startX, int startY, StudentWorld* world)
+    : Actor(IID_BARREL, startX, startY, right, 1.0, 2, world) {
+    setVisible(false); // Initially invisible
+}
+
+Barrel::~Barrel() {}
+
+void Barrel::doSomething() {
+    if (!isAlive()) return;
+
+    // Check if the Iceman is within 5 radius distance
+    int icemanX = getWorld()->getIcemanX();
+    int icemanY = getWorld()->getIcemanY();
+    int distance = getWorld()->calculateDistance(getX(), getY(), icemanX, icemanY);
+
+    if (!isVisible() && distance <= 5) {
+        setVisible(true); // Make the barrel visible
+    }
+
+    // Logic to handle barrel being picked up
+    if (isVisible() && icemanX == getX() && icemanY == getY()) {
+        setDead(); // Barrel picked up, set it as dead
+        getWorld()->increaseScore(1000); // Increase score for picking up barrel
+        getWorld()->playSound(SOUND_FOUND_OIL); // Play sound effect
+    }
+}
+
+//============================================================================================

@@ -8,7 +8,7 @@
 class StudentWorld : public GameWorld {
 public:
     StudentWorld(std::string assetDir);
-       
+
 
     virtual ~StudentWorld();
 
@@ -27,7 +27,16 @@ public:
     int getIcemanY() const;
     bool removeIce(int x, int y);
     bool isIceAt(int x, int y) const;
+
+
+    //=========================================CHANGED============================================
+
     bool isBoulderAt(int x, int y, double radius) const;
+    bool isNearIceman(int x, int y, double radius) const;
+    double calculateDistance(int x1, int y1, int x2, int y2);
+
+    //============================================================================================
+
 
 private:
     Iceman* m_iceman;
@@ -41,4 +50,3 @@ private:
 };
 
 #endif // STUDENTWORLD_H
-
