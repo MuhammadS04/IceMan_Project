@@ -130,7 +130,9 @@ void Iceman::doSomething() {
         case 'Z':
             if (m_sonar > 0) {
                 m_sonar--;
-                getWorld()->revealObjects(getX(), getY(), 12);
+                getWorld()->revealObjects(getX(), getY(), 12);  // reveal objects within a radius of 12 units
+                getWorld()->playSound(SOUND_PLAYER_GIVE_UP);
+
             }
             break;
 
@@ -150,6 +152,14 @@ int Iceman::getGoldNugget() { return m_gold; }
 int Iceman::getOil() { return m_oilLeft; }
 int Iceman::getHP() { return m_hitPoints; }
 void Iceman::setGoldNugget(int val) { m_gold = val; }
+void Iceman::increaseSonarKit() {
+    m_sonar++;
+}
+void Iceman::increaseWater(int amount) {
+    m_water += amount;
+}
+
+
 
 void Iceman::dropGold()
 {
@@ -157,6 +167,7 @@ void Iceman::dropGold()
     {
         getWorld()->dropGold();
         getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() - 1);
+
     }
 }
 
@@ -187,6 +198,22 @@ void Boulder::doSomething() {
     case FALLING:
         if (getY() > 0 && !getWorld()->isBlocked(getX(), getY() - 1)) {
             moveTo(getX(), getY() - 1);
+
+            // Annoy Protester or Iceman within a radius of 3.0 units
+            for (auto actor : getWorld()->getActors()) {
+                if (Protester* protester = dynamic_cast<Protester*>(actor)) {
+                    if (getWorld()->calculateDistance(getX(), getY(), protester->getX(), protester->getY()) <= 3.0) {
+                        protester->getAnnoyed(100);  // Annoy Protester with 100 points
+                    }
+                }
+            }
+
+            // Check if Iceman is within a radius of 3.0 units
+            if (getWorld()->calculateDistance(getX(), getY(), getWorld()->getIceman()->getX(), getWorld()->getIceman()->getY()) <= 3.0) {
+                getWorld()->getIceman()->setDead();  // Set Iceman to dead
+            }
+
+            // Check if Boulder should be set to dead
             if (getWorld()->annoyIcemanOrProtester(this)) {
                 setDead();
             }
@@ -195,113 +222,168 @@ void Boulder::doSomething() {
             setDead();
         }
         break;
+
     }
 }
 
 // Squirt class implementation
 Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* world)
-    : Actor(IID_WATER_SPURT, startX, startY, dir, 1.0, 1, world), m_distanceTraveled(0) {}
-
+    : Actor(IID_WATER_SPURT, startX, startY, dir, 1.0, 1, world), m_distanceTraveled(0)
+{
+    setVisible(true);
+}
 Squirt::~Squirt() {}
-
+//
+//void Squirt::doSomething() {
+//    if (!isAlive()) return;
+//
+//    if (m_distanceTraveled >= 4) {
+//        setDead();
+//    }
+//    else {
+//        int x = getX(), y = getY();
+//        switch (getDirection()) {
+//        case left:
+//            if (!getWorld()->isBlocked(x - 1, y)) {
+//                moveTo(x - 1, y);
+//            }
+//            else {
+//                setDead();
+//            }
+//            break;
+//        case right:
+//            if (!getWorld()->isBlocked(x + 1, y)) {
+//                moveTo(x + 1, y);
+//            }
+//            else {
+//                setDead();
+//            }
+//            break;
+//        case up:
+//            if (!getWorld()->isBlocked(x, y + 1)) {
+//                moveTo(x, y + 1);
+//            }
+//            else {
+//                setDead();
+//            }
+//            break;
+//        case down:
+//            if (!getWorld()->isBlocked(x, y - 1)) {
+//                moveTo(x, y - 1);
+//            }
+//            else {
+//                setDead();
+//            }
+//            break;
+//        }
+//        m_distanceTraveled++;
+//        if (getWorld()->annoyProtesterAt(getX(), getY(), 2)) {
+//            setDead();
+//        }
+//    }
+//}
 void Squirt::doSomething() {
     if (!isAlive()) return;
 
+    // Check if Squirt is within radius of 3.0 units from any Protester
+    for (auto actor : getWorld()->getActors()) {
+        Protester* protester = dynamic_cast<Protester*>(actor);
+        if (protester && getWorld()->calculateDistance(getX(), getY(), protester->getX(), protester->getY()) <= 3.0) {
+            protester->getAnnoyed(2); // Annoy Protester with 2 points
+            setDead();
+            return;
+        }
+    }
+
+    // Check if Squirt has traveled its full distance
     if (m_distanceTraveled >= 4) {
         setDead();
+        return;
     }
-    else {
-        int x = getX(), y = getY();
-        switch (getDirection()) {
-        case left:
-            if (!getWorld()->isBlocked(x - 1, y)) {
-                moveTo(x - 1, y);
-            }
-            else {
-                setDead();
-            }
-            break;
-        case right:
-            if (!getWorld()->isBlocked(x + 1, y)) {
-                moveTo(x + 1, y);
-            }
-            else {
-                setDead();
-            }
-            break;
-        case up:
-            if (!getWorld()->isBlocked(x, y + 1)) {
-                moveTo(x, y + 1);
-            }
-            else {
-                setDead();
-            }
-            break;
-        case down:
-            if (!getWorld()->isBlocked(x, y - 1)) {
-                moveTo(x, y - 1);
-            }
-            else {
-                setDead();
-            }
-            break;
+
+    // Determine next position and check for obstacles
+    int x = getX(), y = getY();
+    switch (getDirection()) {
+    case left:
+        if (!getWorld()->isIceAt(x - 1, y) && !getWorld()->isBoulderAt(x - 1, y, 0.5)) {
+            moveTo(x - 4, y);
         }
-        m_distanceTraveled++;
-        if (getWorld()->annoyProtesterAt(getX(), getY(), 2)) {
+        else {
             setDead();
         }
+        break;
+    case right:
+        if (!getWorld()->isIceAt(x + 1, y) && !getWorld()->isBoulderAt(x + 1, y, 0.5)) {
+            moveTo(x + 4, y);
+        }
+        else {
+            setDead();
+        }
+        break;
+    case up:
+        if (!getWorld()->isIceAt(x, y + 1) && !getWorld()->isBoulderAt(x, y + 1, 0.5)) {
+            moveTo(x, y + 4);
+        }
+        else {
+            setDead();
+        }
+        break;
+    case down:
+        if (!getWorld()->isIceAt(x, y - 1) && !getWorld()->isBoulderAt(x, y - 1, 0.5)) {
+            moveTo(x, y - 4);
+        }
+        else {
+            setDead();
+        }
+        break;
     }
+    m_distanceTraveled++;
 }
 
 
 //============================================CHANGED=====================================================
 // GoldNugget class implementation
-GoldNugget::GoldNugget(int startX, int startY, bool temporary, StudentWorld* world)
-    : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(100), m_visible(false) {
-    setVisible(temporary); // Initially invisible
+GoldNugget::GoldNugget(int startX, int startY, bool temporary, bool isPickupableByIceman, StudentWorld* world)
+    : Actor(IID_GOLD, startX, startY, right, 1.0, 2, world), m_temporary(temporary), m_ticksLeft(temporary ? 100 : 0), m_visible(false), m_isPickupableByIceman(isPickupableByIceman) {
+    setVisible(temporary ? true : false);
 }
 
 GoldNugget::~GoldNugget() {}
 
-void GoldNugget::setVisible(bool visible) {
-    m_visible = visible;
-    Actor::setVisible(visible); // Call the base class function to set visibility
-}
-
-
 void GoldNugget::doSomething() {
-    if (!isAlive()) return;
+    if (!isAlive()) {
+        return;
+    }
 
-    if (m_isPickupable) {
-        if (!isVisible() && getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 5) {
-            setVisible(true);
-            return;
-        }
-
-        if (isVisible() && getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 2) {
+    if (m_temporary) {
+        if (m_ticksLeft <= 0) {
             setDead();
-            getWorld()->playSound(SOUND_GOT_GOODIE);
-            getWorld()->increaseScore(10); // Adjust score as needed
-            getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() + 1);
-            return;
+        }
+        else {
+            m_ticksLeft--;
         }
     }
-    else {
-        if (m_ticksLeft == 0) {
-            setDead();
-            return;
-        }
 
-        //if (getWorld()->anyProtesterPickUpGold(this)) {
-        //    Protester* protester = getWorld()->anyProtesterPickUpGold(this);
-        //    setDead();
-        //    protester->getBribed(); // Assuming Protester has a method to handle getting bribed
-        //    return;
-        //}
+    if (!m_visible && getWorld()->isNearIceman(getX(), getY(), 4)) {
+        setVisible(true);
+        m_visible = true;
+    }
 
-        --m_ticksLeft;
+    if (m_visible && m_isPickupableByIceman && getWorld()->isNearIceman(getX(), getY(), 3)) {
+        getWorld()->increaseScore(10);
+        setDead();
+        getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() + 1);
+        getWorld()->playSound(SOUND_GOT_GOODIE);
     }
 }
+
+void GoldNugget::setVisible(bool visible) {
+    GraphObject::setVisible(visible);
+}
+
+
+
+
 
 
 //========================================================================================================
@@ -408,6 +490,15 @@ void Protester::shoutIfCloseToIceman() {
     }
 }
 
+void Protester::getBribed() {
+    // Logic for handling the bribery
+    setDead();
+    m_leaveOilField = true;
+    getWorld()->increaseScore(25);  // Increase score for bribing
+    getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);  // Play sound effect
+}
+
+
 bool Protester::canMoveInDirection(Direction dir) const {
     int x = getX(), y = getY();
     switch (dir) {
@@ -478,40 +569,56 @@ void HardcoreProtester::doSomething() {
     // Additional logic for hardcore protester behavior
 }
 
-// SonarKit class implementation
+// SonarKit class implementation----------------------------------
 SonarKit::SonarKit(int startX, int startY, StudentWorld* world)
-    : Actor(IID_SONAR, startX, startY, right, 1.0, 5, world) {}
-
+    : Actor(IID_SONAR, startX, startY, right, 1.0, 2, world),
+    m_ticksLeft(std::max(100, 300 - 10 * (int)world->getLevel())) {
+    setVisible(true);
+}
 SonarKit::~SonarKit() {}
 
 void SonarKit::doSomething() {
     if (!isAlive()) return;
 
-    // Logic to check if Iceman picks up Sonar Kit
-    if (getWorld()->getIcemanX() == getX() && getWorld()->getIcemanY() == getY()) {
+    if (getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 3.0) {
+        setDead();
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getIceman()->increaseSonarKit();
         getWorld()->increaseScore(75);
+    }
+    m_ticksLeft--;
+    if (m_ticksLeft <= 0) {
         setDead();
     }
 }
+//---------------------------------------------------------------------
 
 // WaterPool class implementation
+// WaterPool class implementation
 WaterPool::WaterPool(int startX, int startY, StudentWorld* world)
-    : Actor(IID_WATER_POOL, startX, startY, right, 1.0, 2, world), m_ticksLeft(100) {}
+    : Actor(IID_WATER_POOL, startX, startY, right, 1.0, 2, world),
+    m_ticksLeft(std::max(100, 300 - 10 * (int)world->getLevel())) {
+    setVisible(true);
+}
 
 WaterPool::~WaterPool() {}
 
 void WaterPool::doSomething() {
     if (!isAlive()) return;
 
+    // Check if within radius of 3.0 units from Iceman
+    if (getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 3.0) {
+        setDead();
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getIceman()->increaseWater(5); // Method to increase Iceman's water
+        getWorld()->increaseScore(100);
+    }
+
+    // Check if lifetime has elapsed
     if (m_ticksLeft > 0) {
         m_ticksLeft--;
     }
     else {
-        setDead();
-    }
-    // Logic to check if Iceman picks up Water Pool
-    if (getWorld()->getIcemanX() == getX() && getWorld()->getIcemanY() == getY()) {
-        getWorld()->increaseScore(100);
         setDead();
     }
 }
@@ -531,20 +638,24 @@ Barrel::~Barrel() {}
 void Barrel::doSomething() {
     if (!isAlive()) return;
 
-    // Check if the Iceman is within 5 radius distance
+    // Check if the Barrel is within 4.0 radius distance for visibility
     int icemanX = getWorld()->getIcemanX();
     int icemanY = getWorld()->getIcemanY();
-    int distance = getWorld()->calculateDistance(getX(), getY(), icemanX, icemanY);
+    double distance = getWorld()->calculateDistance(getX(), getY(), icemanX, icemanY);
 
-    if (!isVisible() && distance <= 5) {
+    if (!isVisible() && distance <= 4.0) {
         setVisible(true); // Make the barrel visible
+        return; // Return immediately after making visible
     }
 
-    // Logic to handle barrel being picked up
-    if (isVisible() && icemanX == getX() && icemanY == getY()) {
+    // Check if the Barrel is within 3.0 radius distance for pickup
+    if (distance <= 3.0) {
         setDead(); // Barrel picked up, set it as dead
-        getWorld()->increaseScore(1000); // Increase score for picking up barrel
         getWorld()->playSound(SOUND_FOUND_OIL); // Play sound effect
+        getWorld()->increaseScore(1000); // Increase score for picking up barrel
+
+        // Inform StudentWorld if necessary (e.g., to track barrels picked up)
+        getWorld()->barrelPickedUp();
     }
 }
 
