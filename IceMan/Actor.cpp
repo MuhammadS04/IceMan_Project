@@ -130,7 +130,9 @@ void Iceman::doSomething() {
         case 'Z':
             if (m_sonar > 0) {
                 m_sonar--;
-                getWorld()->revealObjects(getX(), getY(), 12);
+                getWorld()->revealObjects(getX(), getY(), 12);  // reveal objects within a radius of 12 units
+                getWorld()->playSound(SOUND_PLAYER_GIVE_UP);
+
             }
             break;
 
@@ -150,6 +152,10 @@ int Iceman::getGoldNugget() { return m_gold; }
 int Iceman::getOil() { return m_oilLeft; }
 int Iceman::getHP() { return m_hitPoints;  }
 void Iceman::setGoldNugget(int val) { m_gold = val; }
+void Iceman::increaseSonarKit() {
+    m_sonar++;
+}
+
 
 void Iceman::dropGold()
 {
@@ -500,21 +506,29 @@ void HardcoreProtester::doSomething() {
     // Additional logic for hardcore protester behavior
 }
 
-// SonarKit class implementation
+// SonarKit class implementation----------------------------------
 SonarKit::SonarKit(int startX, int startY, StudentWorld* world)
-    : Actor(IID_SONAR, startX, startY, right, 1.0, 2, world) {}
-
+    : Actor(IID_SONAR, startX, startY, right, 1.0, 2, world),
+    m_ticksLeft(std::max(100, 300 - 10 * (int)world->getLevel())) {
+    setVisible(true);
+}
 SonarKit::~SonarKit() {}
 
 void SonarKit::doSomething() {
     if (!isAlive()) return;
 
-    // Logic to check if Iceman picks up Sonar Kit
-    if (getWorld()->getIcemanX() == getX() && getWorld()->getIcemanY() == getY()) {
+    if (getWorld()->calculateDistance(getX(), getY(), getWorld()->getIcemanX(), getWorld()->getIcemanY()) <= 3.0) {
+        setDead();
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getIceman()->increaseSonarKit();
         getWorld()->increaseScore(75);
+    }
+    m_ticksLeft--;
+    if (m_ticksLeft <= 0) {
         setDead();
     }
 }
+//---------------------------------------------------------------------
 
 // WaterPool class implementation
 WaterPool::WaterPool(int startX, int startY, StudentWorld* world)

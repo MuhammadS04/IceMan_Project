@@ -38,6 +38,7 @@ public:
     int getHP();
     void setGoldNugget(int val);
     void dropGold();
+    void increaseSonarKit();
 
 
 private:
@@ -127,8 +128,10 @@ public:
     SonarKit(int startX, int startY, StudentWorld* world);
     virtual ~SonarKit();
     virtual void doSomething();
-};
 
+private:
+    int m_ticksLeft;
+};
 class WaterPool : public Actor {
 public:
     WaterPool(int startX, int startY, StudentWorld* world);
