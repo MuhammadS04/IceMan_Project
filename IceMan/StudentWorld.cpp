@@ -26,8 +26,7 @@ StudentWorld::~StudentWorld() {
     cleanUp();
 }
 
-int StudentWorld::init()
-{
+int StudentWorld::init() {
     m_iceman = new Iceman(this);
 
     // Initialize Ice objects and add to the ice field array
@@ -39,11 +38,15 @@ int StudentWorld::init()
         }
     }
 
-    // Add initial Boulders, Gold Nuggets, and other actors
+    // Determine the number of barrels for the current level
+    m_barrelsLeft = std::min(2 + (int)getLevel(), 21);
+
+    // Add initial Boulders, Gold Nuggets, Barrels, and other actors
     addActors();
 
     return GWSTATUS_CONTINUE_GAME;
 }
+
 
 int StudentWorld::move() {
     updateDisplayText();
@@ -59,8 +62,11 @@ int StudentWorld::move() {
 
     if (!m_iceman->isAlive()) return GWSTATUS_PLAYER_DIED;
 
+    if (m_barrelsLeft == 0) return GWSTATUS_FINISHED_LEVEL;  // Check for level completion
+
     return GWSTATUS_CONTINUE_GAME;
 }
+
 
 void StudentWorld::cleanUp()
 {
@@ -92,7 +98,7 @@ void StudentWorld::updateDisplayText()
     int squirts = m_iceman->getWater();
     int gold = m_iceman->getGoldNugget();
     int sonar = m_iceman->getSonarCharge();
-    int barrels = m_iceman->getOil();
+    int barrels = m_barrelsLeft;
 
     stringstream s;
 
@@ -141,22 +147,54 @@ void StudentWorld::removeDeadGameObjects() {
 void StudentWorld::playFinishedLevelSound() {
     // Play sound when the level is finished
 }
-
 void StudentWorld::addActors() {
+    int currentLevel = getLevel();
+
+    // Calculate the number of Boulders, Gold Nuggets, and Barrels
+    int B = std::min(currentLevel / 2 + 2, 9);
+    int G = std::max(5 - currentLevel / 2, 2);
+    int L = std::min(2 + currentLevel, 21);
+
     // Add Boulders
-    int B = std::min((int)getLevel() / 2 + 2, 9);
     for (int i = 0; i < B; i++) {
-        int x = rand() % 60;
-        int y = 20 + rand() % 36;
+        int x, y;
+        bool positionValid = false;
+        while (!positionValid) {
+            x = rand() % 60;
+            y = 20 + rand() % 36;
+            positionValid = true;
+            // Check if there is any other Boulder in the same position
+            for (auto actor : m_actors) {
+                if (Boulder* boulder = dynamic_cast<Boulder*>(actor)) {
+                    if (calculateDistance(x, y, boulder->getX(), boulder->getY()) <= 3.0) {
+                        positionValid = false;
+                        break;
+                    }
+                }
+            }
+        }
         m_actors.push_back(new Boulder(x, y, this));
+
+        // Remove Ice below the Boulder
+        for (int j = 0; j < 4; j++) {
+            for (int k = 0; k < 4; k++) {
+                removeIce(x + j, y + k);
+            }
+        }
     }
 
     // Add Gold Nuggets
-    int G = std::max(5 - (int)getLevel() / 2, 2);
     for (int i = 0; i < G; i++) {
         int x = rand() % 61;
         int y = rand() % 57;
         m_actors.push_back(new GoldNugget(x, y, false, true, this));
+    }
+
+    // Add Barrels
+    for (int i = 0; i < L; i++) {
+        int x = rand() % 60;
+        int y = rand() % 56;
+        m_actors.push_back(new Barrel(x, y, this));
     }
 
     // Add Regular Protesters
@@ -186,16 +224,69 @@ void StudentWorld::addActors() {
         m_actors.push_back(new WaterPool(x, y, this));
     }
 
-    // Add Barrels
-    int H = std::min((int)getLevel() / 2 + 2, 9);
-    for (int i = 0; i < B; i++) {
-        int x = rand() % 60;
-        int y = rand() % 56;
-        m_actors.push_back(new Barrel(x, y, this));
-    }
-
     // Add other actors similarly...
 }
+
+
+const vector<Actor*>& StudentWorld::getActors() const {
+    return m_actors;
+}
+
+
+//void StudentWorld::addActors() {
+//    // Add Boulders
+//    int B = std::min((int)getLevel() / 2 + 2, 9);
+//    for (int i = 0; i < B; i++) {
+//        int x = rand() % 60;
+//        int y = 20 + rand() % 36;
+//        m_actors.push_back(new Boulder(x, y, this));
+//    }
+//
+//    // Add Gold Nuggets
+//    int G = std::max(5 - (int)getLevel() / 2, 2);
+//    for (int i = 0; i < G; i++) {
+//        int x = rand() % 61;
+//        int y = rand() % 57;
+//        m_actors.push_back(new GoldNugget(x, y, false, true, this));
+//    }
+//
+//    // Add Regular Protesters
+//    int P = std::min(15, int(2 + getLevel() * 1.5));
+//    for (int i = 0; i < P; i++) {
+//        if (rand() % 100 < (std::min(90, (int)getLevel() * 10 + 30))) {
+//            m_actors.push_back(new HardcoreProtester(60, 60, this));
+//        }
+//        else {
+//            m_actors.push_back(new RegularProtester(60, 60, this));
+//        }
+//    }
+//
+//    // Add Sonar Kits
+//    int S = std::max(1, (int)getLevel() / 2);
+//    for (int i = 0; i < S; i++) {
+//        int x = rand() % 60;
+//        int y = rand() % 60;
+//        m_actors.push_back(new SonarKit(x, y, this));
+//    }
+//
+//    // Add Water Pools
+//    int W = std::max(1, (int)getLevel() / 2);
+//    for (int i = 0; i < W; i++) {
+//        int x = rand() % 60;
+//        int y = rand() % 60;
+//        m_actors.push_back(new WaterPool(x, y, this));
+//    }
+//
+//    // Add Barrels
+//    int H = std::min((int)getLevel() / 2 + 2, 9);
+//    for (int i = 0; i < B; i++) {
+//        int x = rand() % 60;
+//        int y = rand() % 56;
+//        m_actors.push_back(new Barrel(x, y, this));
+//    }
+//
+//    // Add other actors similarly...
+//}
 
 void StudentWorld::addActor(Actor* actor) {
     m_actors.push_back(actor);
@@ -342,3 +433,13 @@ bool StudentWorld::isNearIceman(int x, int y, double radius) const {
 double StudentWorld::calculateDistance(int x1, int y1, int x2, int y2) {
     return sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 }
+
+void StudentWorld::barrelPickedUp() {
+    m_barrelsLeft--;
+    if (m_barrelsLeft == 0) {
+        playFinishedLevelSound();
+       // return GWSTATUS_FINISHED_LEVEL;
+        // Additional logic to handle level completion if necessary
+    }
+}
+

@@ -4,6 +4,7 @@
 #include "GameWorld.h"
 #include <vector>
 #include "Actor.h";
+using namespace std;
 
 class StudentWorld : public GameWorld {
 public:
@@ -30,7 +31,8 @@ public:
     Iceman* getIceman() const;
     void dropGold();
     Protester* anyProtesterPickUpGold(GoldNugget* gold);
-
+    void barrelPickedUp();
+    const vector<Actor*>& getActors() const;
 
     //=========================================CHANGED============================================
 
@@ -44,7 +46,8 @@ public:
 private:
     Iceman* m_iceman;
     Ice* m_iceField[64][64]; // Ice field array
-    std::vector<Actor*> m_actors;
+    vector<Actor*> m_actors;
+    int m_barrelsLeft;
 
     void updateDisplayText();
     void removeDeadGameObjects();

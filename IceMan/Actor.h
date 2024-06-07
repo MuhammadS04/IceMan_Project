@@ -39,6 +39,7 @@ public:
     void setGoldNugget(int val);
     void dropGold();
     void increaseSonarKit();
+    void increaseWater(int amont);
 
 
 private:
