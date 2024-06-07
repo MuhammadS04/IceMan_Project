@@ -233,60 +233,6 @@ const vector<Actor*>& StudentWorld::getActors() const {
 }
 
 
-//void StudentWorld::addActors() {
-//    // Add Boulders
-//    int B = std::min((int)getLevel() / 2 + 2, 9);
-//    for (int i = 0; i < B; i++) {
-//        int x = rand() % 60;
-//        int y = 20 + rand() % 36;
-//        m_actors.push_back(new Boulder(x, y, this));
-//    }
-//
-//    // Add Gold Nuggets
-//    int G = std::max(5 - (int)getLevel() / 2, 2);
-//    for (int i = 0; i < G; i++) {
-//        int x = rand() % 61;
-//        int y = rand() % 57;
-//        m_actors.push_back(new GoldNugget(x, y, false, true, this));
-//    }
-//
-//    // Add Regular Protesters
-//    int P = std::min(15, int(2 + getLevel() * 1.5));
-//    for (int i = 0; i < P; i++) {
-//        if (rand() % 100 < (std::min(90, (int)getLevel() * 10 + 30))) {
-//            m_actors.push_back(new HardcoreProtester(60, 60, this));
-//        }
-//        else {
-//            m_actors.push_back(new RegularProtester(60, 60, this));
-//        }
-//    }
-//
-//    // Add Sonar Kits
-//    int S = std::max(1, (int)getLevel() / 2);
-//    for (int i = 0; i < S; i++) {
-//        int x = rand() % 60;
-//        int y = rand() % 60;
-//        m_actors.push_back(new SonarKit(x, y, this));
-//    }
-//
-//    // Add Water Pools
-//    int W = std::max(1, (int)getLevel() / 2);
-//    for (int i = 0; i < W; i++) {
-//        int x = rand() % 60;
-//        int y = rand() % 60;
-//        m_actors.push_back(new WaterPool(x, y, this));
-//    }
-//
-//    // Add Barrels
-//    int H = std::min((int)getLevel() / 2 + 2, 9);
-//    for (int i = 0; i < B; i++) {
-//        int x = rand() % 60;
-//        int y = rand() % 56;
-//        m_actors.push_back(new Barrel(x, y, this));
-//    }
-//
-//    // Add other actors similarly...
-//}
 
 void StudentWorld::addActor(Actor* actor) {
     m_actors.push_back(actor);
@@ -385,7 +331,7 @@ void StudentWorld::dropGold()
     GoldNugget* newGold = new GoldNugget(getIcemanX(), getIcemanY(), false, false, this);
     //newGold->m_temporary = false;
     m_actors.push_back(newGold);
-    
+
 }
 
 Protester* StudentWorld::anyProtesterPickUpGold(GoldNugget* gold) {
@@ -438,8 +384,6 @@ void StudentWorld::barrelPickedUp() {
     m_barrelsLeft--;
     if (m_barrelsLeft == 0) {
         playFinishedLevelSound();
-       // return GWSTATUS_FINISHED_LEVEL;
-        // Additional logic to handle level completion if necessary
+        // return GWSTATUS_FINISHED_LEVEL;
     }
 }
-

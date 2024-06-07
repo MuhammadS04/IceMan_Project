@@ -2,7 +2,7 @@
 #include "StudentWorld.h"
 #include "GameConstants.h"
 
-// Actor class implementation
+// Actor class 
 Actor::Actor(int imageID, int startX, int startY, Direction dir, float size, unsigned int depth, StudentWorld* world)
     : GraphObject(imageID, startX, startY, dir, size, depth), m_alive(true), m_world(world) {
     setVisible(true);
@@ -22,14 +22,14 @@ StudentWorld* Actor::getWorld() const {
     return m_world;
 }
 
-// Ice class implementation
+// Ice class 
 Ice::Ice(int startX, int startY, StudentWorld* world)
     : Actor(IID_ICE, startX, startY, right, 0.25, 3, world) {}
 
 Ice::~Ice() {}
 
 void Ice::doSomething() {
-    // Ice does nothing
+    // Ice does 
 }
 
 Iceman::Iceman(StudentWorld* world)
@@ -38,7 +38,6 @@ Iceman::Iceman(StudentWorld* world)
 Iceman::~Iceman() {}
 
 void Iceman::doSomething() {
-    // 1. Check if the Iceman is alive
     if (!isAlive()) return;
 
     // 2. Remove ice in the 4x4 area occupied by the Iceman
@@ -150,7 +149,7 @@ int Iceman::getWater() { return m_water; }
 int Iceman::getSonarCharge() { return m_sonar; }
 int Iceman::getGoldNugget() { return m_gold; }
 int Iceman::getOil() { return m_oilLeft; }
-int Iceman::getHP() { return m_hitPoints;  }
+int Iceman::getHP() { return m_hitPoints; }
 void Iceman::setGoldNugget(int val) { m_gold = val; }
 void Iceman::increaseSonarKit() {
     m_sonar++;
@@ -167,11 +166,11 @@ void Iceman::dropGold()
     {
         getWorld()->dropGold();
         getWorld()->getIceman()->setGoldNugget(getWorld()->getIceman()->getGoldNugget() - 1);
-        
+
     }
 }
 
-// Boulder class implementation
+// Boulder class 
 Boulder::Boulder(int startX, int startY, StudentWorld* world)
     : Actor(IID_BOULDER, startX, startY, down, 1.0, 1, world), m_state(STABLE), m_waitingTicks(30) {}
 
@@ -226,62 +225,14 @@ void Boulder::doSomething() {
     }
 }
 
-// Squirt class implementation
+// Squirt class 
 Squirt::Squirt(int startX, int startY, Direction dir, StudentWorld* world)
     : Actor(IID_WATER_SPURT, startX, startY, dir, 1.0, 1, world), m_distanceTraveled(0)
 {
     setVisible(true);
 }
 Squirt::~Squirt() {}
-//
-//void Squirt::doSomething() {
-//    if (!isAlive()) return;
-//
-//    if (m_distanceTraveled >= 4) {
-//        setDead();
-//    }
-//    else {
-//        int x = getX(), y = getY();
-//        switch (getDirection()) {
-//        case left:
-//            if (!getWorld()->isBlocked(x - 1, y)) {
-//                moveTo(x - 1, y);
-//            }
-//            else {
-//                setDead();
-//            }
-//            break;
-//        case right:
-//            if (!getWorld()->isBlocked(x + 1, y)) {
-//                moveTo(x + 1, y);
-//            }
-//            else {
-//                setDead();
-//            }
-//            break;
-//        case up:
-//            if (!getWorld()->isBlocked(x, y + 1)) {
-//                moveTo(x, y + 1);
-//            }
-//            else {
-//                setDead();
-//            }
-//            break;
-//        case down:
-//            if (!getWorld()->isBlocked(x, y - 1)) {
-//                moveTo(x, y - 1);
-//            }
-//            else {
-//                setDead();
-//            }
-//            break;
-//        }
-//        m_distanceTraveled++;
-//        if (getWorld()->annoyProtesterAt(getX(), getY(), 2)) {
-//            setDead();
-//        }
-//    }
-//}
+
 void Squirt::doSomething() {
     if (!isAlive()) return;
 
@@ -406,8 +357,8 @@ void GoldNugget::doSomething() {
 //========================================================================================================
 
 
-
-// Protester class implementation
+//=======================================================UNFINISHED!!!!!===========================================
+// Protester class 
 Protester::Protester(int imageID, int startX, int startY, StudentWorld* world, int hitPoints)
     : Actor(imageID, startX, startY, left, 1.0, 0, world), m_hitPoints(hitPoints), m_restingTicks(0), m_shoutCooldown(0), m_numSquaresToMoveInCurrentDirection(0), m_leaveOilField(false) {}
 
@@ -543,7 +494,6 @@ void Protester::pickNewDirection() {
 }
 
 void Protester::moveToExit() {
-    // Logic to move towards the exit
     // If the protester reaches the exit, set it as dead
 }
 
@@ -583,10 +533,10 @@ void HardcoreProtester::doSomething() {
     moveToNextPosition();
     shoutIfCloseToIceman();
     setRestingTicks(3);
-    // Additional logic for hardcore protester behavior
 }
+//======================================================================================================================
 
-// SonarKit class implementation----------------------------------
+// SonarKit class ----------------------------------
 SonarKit::SonarKit(int startX, int startY, StudentWorld* world)
     : Actor(IID_SONAR, startX, startY, right, 1.0, 2, world),
     m_ticksLeft(std::max(100, 300 - 10 * (int)world->getLevel())) {
@@ -610,8 +560,6 @@ void SonarKit::doSomething() {
 }
 //---------------------------------------------------------------------
 
-// WaterPool class implementation
-// WaterPool class implementation
 WaterPool::WaterPool(int startX, int startY, StudentWorld* world)
     : Actor(IID_WATER_POOL, startX, startY, right, 1.0, 2, world),
     m_ticksLeft(std::max(100, 300 - 10 * (int)world->getLevel())) {
@@ -644,7 +592,6 @@ void WaterPool::doSomething() {
 //=====================================================================================
 
 
-// Barrel class implementation
 Barrel::Barrel(int startX, int startY, StudentWorld* world)
     : Actor(IID_BARREL, startX, startY, right, 1.0, 2, world) {
     setVisible(false); // Initially invisible

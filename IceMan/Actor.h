@@ -152,7 +152,6 @@ public:
     virtual void doSomething() override;
 
 private:
-    // Add any necessary private members
 };
 
 //============================================================================================
